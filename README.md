@@ -37,8 +37,8 @@ Velvet with k = 91 gave the best assembly: 215 contigs, 4.78 Mb, N50 118,786 bp,
 | `summary.tsv` | statistics for every assembly |
 | `velvet_k91_lengths.tsv` | every contig length, optimal Velvet assembly |
 | `oases_k81_lengths.tsv` | every transcript length, optimal Oases assembly |
-| `velvet_summary.zip` | QUAST report for all Velvet assemblies |
-| `oases_summary.zip` | QUAST report for all Oases assemblies |
+| `velvet_summary/` | QUAST report for all Velvet assemblies |
+| `oases_summary/` | QUAST report for all Oases assemblies |
 
 ## Steps to Execute the Project
 

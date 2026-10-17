@@ -19,8 +19,8 @@ assembly_stats.py       N50, L50, totals and contig lengths
 summary.tsv             stats for every assembly
 velvet_k91_lengths.tsv  contig lengths, best Velvet assembly
 oases_k81_lengths.tsv   transcript lengths, best Oases assembly
-velvet_summary.zip      QUAST output for the Velvet assemblies
-oases_summary.zip       QUAST output for the Oases assemblies
+velvet_summary/      QUAST output for the Velvet assemblies
+oases_summary/       QUAST output for the Oases assemblies
 
 
 1) Setup (login node)
