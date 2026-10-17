@@ -9,7 +9,6 @@
 #SBATCH --time=01:00:00
 #SBATCH --array=0-25
 #SBATCH -o logs/asm_%A_%a.log
-#
 # Job array: one task per (tool, k). Tasks 0-12 = Velvet, 13-25 = Oases, same 13 k values.
 # If you change K, also change --array to 0-(2*number_of_k - 1).
 # Submit with submit_all.sh (it also queues the summary job).
@@ -32,7 +31,7 @@ conda activate "$CONDA_ENV"
 set -eo pipefail
 mkdir -p "$WORK"/{velvet,oases} "$ROWS"
 
-# ---------- which tool and k is this task? ----------
+# which tool and k is this task?
 i=${SLURM_ARRAY_TASK_ID:?run this with sbatch}
 n=${#K[@]}
 if (( i < n )); then tool=velvet; else tool=oases; fi
@@ -40,7 +39,7 @@ k=${K[$(( i % n ))]}
 d="$WORK/$tool/k$k"
 echo "Task $i: $tool k=$k on $(hostname), $THREADS threads"
 
-# ---------- reads (already downloaded with prefetch + fasterq-dump --split-3) ----------
+# reads (already downloaded with prefetch + fasterq-dump --split-3)
 if [[ -f $READS/${SRR}_1.fastq && -f $READS/${SRR}_2.fastq ]]; then
     READ_ARGS=(-shortPaired -fastq -separate "$READS/${SRR}_1.fastq" "$READS/${SRR}_2.fastq")
 else
@@ -59,7 +58,7 @@ timed() {
 }
 combine() { awk -F'\t' 'NF==2{w+=$1; if($2>m)m=$2} END{printf "%.1f %d\n", w, m}' "$@"; }
 
-# ---------- assemble ----------
+# assemble
 rm -rf "$d"
 if [[ $tool == velvet ]]; then
     timed "$d.velveth.time" velveth "$d" "$k" "${READ_ARGS[@]}"
@@ -74,7 +73,7 @@ else
     times=("$d.velveth.time" "$d.velvetg.time" "$d.oases.time")
 fi
 
-# ---------- one summary row for this assembly ----------
+# one summary row for this assembly
 read wall mem < <(combine "${times[@]}")
 python3 "$STATS" summary "$tool" "$k" "$fasta" "$wall" "$mem" > "$ROWS/${tool}_k${k}.tsv"
 cat "$ROWS/${tool}_k${k}.tsv"

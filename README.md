@@ -1,16 +1,16 @@
 # Assignment 1 | Genome Assembly Using Velvet and Oases
 
-**Programmer Name:** Vignu Gutta
-**Language of the scripts:** Unix / Bash (Slurm), Python 3
-**Date:** 10/16/2026
+Programmer Name: Vignesh Gutta  
+Language: Bash (Slurm) and Python 3  
+Date: 10/16/2026
 
 ## Description
 
-This project performs de novo assembly of the *Escherichia coli* genome from Illumina short reads (SRA run **SRR21904868**) using two de Bruijn graph assemblers, **Velvet** and **Oases**, and studies how assembly quality depends on the k-mer size and on Velvet's coverage parameters.
+For this assignment I assembled the *E. coli* genome de novo from Illumina short reads (SRA run SRR21904868) with Velvet and Oases, and looked at how the k-mer size and Velvet's coverage settings change the result.
 
-Each tool was run at 13 k-mer sizes (k = 21 to 141, step 10) as a 26-task Slurm job array on IU **Big Red 200**, so all assemblies ran in parallel. Velvet was also rerun at small k with the expected coverage set by hand. Assemblies were compared with a custom statistics script (contigs, total length, longest contig, N50, L50, run time, peak memory) and with **QUAST**.
+I ran both tools at k = 21 to 141 (step 10) on Big Red 200, using a Slurm job array so the 26 assemblies ran at the same time. I also reran Velvet at small k with the coverage set manually. To compare assemblies I used a small Python script (contigs, total length, longest contig, N50, L50, time, memory) and QUAST.
 
-**Result:** Velvet at **k = 91** gave the best assembly: **215 contigs, 4.78 Mb, N50 118,786 bp, longest contig 397,292 bp**. Oases produced 2.7 times more sequence than the genome contains, so Velvet is the right tool for this problem.
+Velvet with k = 91 gave the best assembly: 215 contigs, 4.78 Mb, N50 118,786 bp, longest contig 397,292 bp. Oases gave about 2.7x more sequence than the genome actually has, so Velvet is the better tool for this data.
 
 ## Requirements
 
@@ -42,7 +42,7 @@ Each tool was run at 13 k-mer sizes (k = 21 to 141, step 10) as a 26-task Slurm 
 
 ## Steps to Execute the Project
 
-### Step 1 — Environment setup (Big Red 200 login node)
+### Step 1: Environment setup (Big Red 200 login node)
 
 ```bash
 module load conda
@@ -52,14 +52,14 @@ conda install -n info636 -c bioconda -c conda-forge quast -y
 pip install setuptools   # QUAST 5.3.0 imports distutils, removed in Python >= 3.12
 ```
 
-### Step 2 — Working directory
+### Step 2: Working directory
 
 ```bash
 mkdir -p /N/scratch/vgutta/assembly/ecoli_assembly/reads
 cd /N/scratch/vgutta/assembly
 ```
 
-### Step 3 — Download the reads
+### Step 3: Download the reads
 
 ```bash
 cd ecoli_assembly/reads
@@ -69,7 +69,7 @@ head -4 SRR21904868_1.fastq             # 151 bp reads
 cd ../..
 ```
 
-### Step 4 — Velvet and Oases at 13 k values (parallel job array)
+### Step 4: Velvet and Oases at 13 k values (parallel job array)
 
 ```bash
 bash submit_all.sh
@@ -100,7 +100,7 @@ oases   oases/k<K>
 
 Each command was wrapped in `/usr/bin/time` to record wall time and peak memory.
 
-### Step 5 — Velvet with manual coverage (k = 21-71)
+### Step 5: Velvet with manual coverage (k = 21-71)
 
 ```bash
 sbatch assemble_manualcov.sh
@@ -108,7 +108,7 @@ sbatch assemble_manualcov.sh
 # E = 26.6 * (151 - k + 1) / (151 - 91 + 1)   (scaled from Velvet's own k = 91 estimate)
 ```
 
-### Step 6 — Statistics and optimal k
+### Step 6: Statistics and optimal k
 
 ```bash
 python3 assembly_stats.py summary <tool> <K> <fasta> <wall_s> <max_rss_kb>
@@ -118,7 +118,7 @@ python3 assembly_stats.py lengths oases/k81/transcripts.fa > oases_k81_lengths.t
 
 Lengths are computed from the sequences: Velvet's `NODE_n_length_L` header gives L in k-mers, and the true length is L + k - 1. The optimal k is the highest N50 whose total length stays close to the genome size.
 
-### Step 7 — QUAST
+### Step 7: QUAST
 
 ```bash
 KS="31 41 51 61 71 81 91 101 111 121 131 141"
@@ -153,14 +153,14 @@ Some reads run into the Nextera adapter (`CTGTCTCTTATACACATCT`) and base quality
 | 61 | 18,695 | 2,570,182 | 310 | 132 | 407 | 8,804 |
 | 71 | 20,808 | 3,630,902 | 530 | 169 | 373 | 8,949 |
 | 81 | 244 | 4,782,670 | 365,843 | 112,568 | 343 | 8,774 |
-| **91** | **215** | **4,783,917** | **397,292** | **118,786** | **223** | **8,327** |
+| 91 | 215 | 4,783,917 | 397,292 | 118,786 | 223 | 8,327 |
 | 101 | 283 | 4,801,948 | 311,964 | 101,557 | 194 | 7,613 |
 | 111 | 329 | 4,806,749 | 166,879 | 65,065 | 188 | 6,679 |
 | 121 | 743 | 4,831,581 | 62,325 | 14,117 | 136 | 5,530 |
 | 131 | 3,492 | 4,159,776 | 10,090 | 1,561 | 113 | 4,177 |
 | 141 | 17 | 38,117 | 10,368 | 3,659 | 85 | 2,612 |
 
-Quality rises to a peak at **k = 91** and falls after it. At k = 131-141 k is too close to the read length: a 151 bp read holds only 151 - k + 1 k-mers (11 at k = 141), so one error removes most of them. At k = 21 both tools exceeded the 16 GB memory limit after about 11 minutes, because smaller k gives a much larger graph.
+Quality rises to a peak at k = 91 and falls after it. At k = 131-141 k is too close to the read length: a 151 bp read holds only 151 - k + 1 k-mers (11 at k = 141), so one error removes most of them. At k = 21 both tools exceeded the 16 GB memory limit after about 11 minutes, because smaller k gives a much larger graph.
 
 ### Why small k failed: Velvet's coverage estimate
 
@@ -190,7 +190,7 @@ N50 rose by up to 450 times, so the small-k failure was a parameter problem, not
 | 51 | 1,524 | 143 | 18,130,793 | 183,243 | 44,772 | 632 | 8,356 |
 | 61 | 24,113 | 1,422 | 16,691,773 | 849,797 | 2,413 | 561 | 8,805 |
 | 71 | 2,378 | 133 | 11,346,768 | 540,708 | 25,582 | 513 | 8,953 |
-| **81** | **662** | **9** | **12,560,123** | **1,116,670** | **255,449** | **289** | **8,770** |
+| 81 | 662 | 9 | 12,560,123 | 1,116,670 | 255,449 | 289 | 8,770 |
 | 91 | 505 | 13 | 10,994,680 | 746,412 | 131,682 | 253 | 8,324 |
 | 101 | 778 | 42 | 11,634,789 | 826,841 | 118,807 | 217 | 7,610 |
 | 111 | 741 | 226 | 7,100,483 | 153,347 | 35,401 | 178 | 6,677 |
@@ -205,7 +205,7 @@ Oases' best N50 is at k = 81, but that assembly is 12.56 Mb, 2.7 times the genom
 | Assembly | Contigs | Total (bp) | Largest (bp) | N50 | NG50 | GC (%) |
 | --- | --- | --- | --- | --- | --- | --- |
 | Velvet k = 81 | 211 | 4,776,832 | 365,843 | 112,568 | 112,568 | 50.83 |
-| **Velvet k = 91** | **197** | **4,780,511** | **397,292** | **118,786** | **119,969** | **50.83** |
+| Velvet k = 91 | 197 | 4,780,511 | 397,292 | 118,786 | 119,969 | 50.83 |
 | Velvet k = 101 | 283 | 4,801,948 | 311,964 | 101,557 | 105,796 | 50.84 |
 | Oases k = 81 | 498 | 12,534,410 | 1,116,670 | 255,449 | 920,170 | 50.65 |
 | Oases k = 91 | 395 | 10,978,673 | 746,412 | 131,682 | 611,191 | 50.98 |
@@ -214,7 +214,7 @@ GC content of 50.6-51.0% matches *E. coli* (about 50.8%). NG50 does not correct 
 
 ### Optimal assemblies: number and length of contigs
 
-**Velvet, k = 91: 215 contigs, 4,783,917 bp.** 16 contigs of at least 100 kb hold 56% of the assembly, 29 of at least 50 kb hold 75%, and 100 of at least 1 kb hold 99%. Every contig length (bp), longest first:
+Velvet, k = 91: 215 contigs, 4,783,917 bp. 16 contigs of at least 100 kb hold 56% of the assembly, 29 of at least 50 kb hold 75%, and 100 of at least 1 kb hold 99%. Every contig length (bp), longest first:
 
 | Ranks | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -241,12 +241,12 @@ GC content of 50.6-51.0% matches *E. coli* (about 50.8%). NG50 does not correct 
 | 201-210 | 192 | 192 | 192 | 192 | 191 | 191 | 191 | 189 | 188 | 187 |
 | 211-215 | 185 | 184 | 183 | 181 | 181 | | | | | |
 
-**Oases, k = 81: 662 transcripts in 9 loci, 12,560,123 bp.** 209 are at least 1 kb, 140 at least 10 kb and 46 at least 50 kb; the longest is 1,116,670 bp. All 662 lengths are in `oases_k81_lengths.tsv`.
+Oases, k = 81: 662 transcripts in 9 loci, 12,560,123 bp. 209 are at least 1 kb, 140 at least 10 kb and 46 at least 50 kb; the longest is 1,116,670 bp. All 662 lengths are in `oases_k81_lengths.tsv`.
 
 ## Summary of Findings
 
-- **Optimal parameters:** Velvet with k = 91 and automatic coverage (215 contigs, 4.78 Mb, N50 118.8 kb). Contiguity rises from k = 81 to a peak at 91 and declines from 101 upward; k = 131-141 collapses because k nears the 151 bp read length.
-- **Coverage is a second key parameter:** Velvet's automatic estimate failed at k <= 71 (1x instead of ~44x at k = 51). Setting it by hand raised N50 at k = 51 from 113 bp to 51.8 kb, but k = 91 stayed best.
-- **Velvet vs Oases: a clear benefit to Velvet.** Velvet reconstructs the genome once at the right size. Oases, built for transcriptomes, treats graph branches as splice isoforms and outputs the same regions repeatedly: 12.56 Mb (2.7x the genome) in 662 transcripts from 9 loci, and it was slower (289 s vs 223 s at each tool's best k). Its larger N50 reflects duplication, not a better genome.
-- **Resources:** run time and memory fall as k rises; k = 21 needed more than 16 GB for both tools.
-- **Quality checks:** GC content 50.6-51.0% matches *E. coli*.
+- Velvet with k = 91 and automatic coverage (215 contigs, 4.78 Mb, N50 118.8 kb). Contiguity rises from k = 81 to a peak at 91 and declines from 101 upward; k = 131-141 collapses because k nears the 151 bp read length.
+- Velvet's automatic estimate failed at k <= 71 (1x instead of ~44x at k = 51). Setting it by hand raised N50 at k = 51 from 113 bp to 51.8 kb, but k = 91 stayed best.
+- Velvet is clearly the better choice here. Velvet reconstructs the genome once at the right size. Oases, built for transcriptomes, treats graph branches as splice isoforms and outputs the same regions repeatedly: 12.56 Mb (2.7x the genome) in 662 transcripts from 9 loci, and it was slower (289 s vs 223 s at each tool's best k). Its larger N50 reflects duplication, not a better genome.
+- run time and memory fall as k rises; k = 21 needed more than 16 GB for both tools.
+- GC content 50.6-51.0% matches *E. coli*.

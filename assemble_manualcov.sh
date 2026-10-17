@@ -9,7 +9,6 @@
 #SBATCH --time=01:00:00
 #SBATCH --array=0-5
 #SBATCH -o logs/mcov_%A_%a.log
-#
 # Velvet at small k with expected coverage set manually instead of "-exp_cov auto".
 # At k <= 71 velvet's auto estimate failed (e.g. k=51 estimated coverage 1.0), so no
 # error k-mers were removed. Here exp_cov is scaled from the k=91 estimate (26.6):

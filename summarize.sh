@@ -8,7 +8,6 @@
 #SBATCH --mem=4G
 #SBATCH --time=00:20:00
 #SBATCH -o logs/summary_%j.log
-#
 # Runs after every array task has finished: builds the summary table, picks the best k
 # for each tool (highest N50) and lists every contig length for those assemblies.
 
@@ -26,7 +25,7 @@ eval "$(conda shell.bash hook)"
 conda activate "$CONDA_ENV"
 set -eo pipefail
 
-# ---------- read statistics ----------
+# read statistics
 read NREADS TOTBP MAXLEN MEANLEN < <(cat "$READS/${SRR}_1.fastq" "$READS/${SRR}_2.fastq" |
     awk 'NR%4==2{n++; b+=length($0); if(length($0)>m)m=length($0)} END{printf "%d %d %d %.1f\n", n, b, m, b/n}')
 {
@@ -39,7 +38,7 @@ read NREADS TOTBP MAXLEN MEANLEN < <(cat "$READS/${SRR}_1.fastq" "$READS/${SRR}_
     echo -e "est_coverage_vs_4.6Mb\t$(awk -v b="$TOTBP" 'BEGIN{printf "%.1fx", b/4.6e6}')"
 } | tee "$RES/read_info.tsv"
 
-# ---------- summary table: velvet rows then oases rows, each sorted by k ----------
+# summary table: velvet rows then oases rows, each sorted by k
 {
     python3 "$STATS" header
     for tool in velvet oases; do
@@ -52,7 +51,7 @@ for f in "$WORK"/velvet/k*/Log; do
     k=$(basename "$(dirname "$f")"); cp "$f" "$RES/velvet_${k}_Log.txt"
 done
 
-# ---------- best k per tool and contig lengths ----------
+# best k per tool and contig lengths
 : > "$RES/best_k.tsv"
 for tool in velvet oases; do
     best=$(awk -F'\t' -v t="$tool" '$1==t' "$RES/summary.tsv" | sort -t$'\t' -k6,6nr | head -1 | cut -f2)
