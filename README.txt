@@ -5,15 +5,41 @@ Working folder: /N/scratch/vgutta/midterm
 Data: SRA/Zenodo record 15853348, rna004_hsapiens_r10k.pod5
       (10,000 human direct RNA reads, RNA004 chemistry, UHR polyA-selected)
 
-Software versions
-  Dorado         2.1.2
-  pod5           (pip, latest)
-  samtools       1.25
-  NanoPlot       1.48.0
-  minimap2       2.31-r1302
-  blue-crab      0.6.0
-  Squigualiser   0.7.0
-  SRA conda env  info636
+Compute environment
+  Cluster        IU Big Red 200 (HPE Cray EX), SUSE Linux
+  Scheduler      Slurm (account c02374)
+  GPU node       NVIDIA A100-SXM4-40GB
+  GPU driver     595.71.05, CUDA 13.2
+  Package mgr    conda 26.3.2
+  Python         3.13.13 (conda env info636)
+  Shell          bash
+
+Software versions and language
+  Dorado         2.1.2+8b8fc5d     C++ / CUDA (downloaded binary)
+  pod5           0.3.x (lib_pod5 0.3.49)   Python (pip)
+  samtools       1.25              C (bioconda)
+  NanoPlot       1.48.0            Python (pip)
+  minimap2       2.31-r1302        C (bioconda)
+  blue-crab      0.6.0             Python (pip)
+  Squigualiser   0.7.0             Python (pip)
+
+  NanoPlot pulled in: pandas 3.1.0, numpy 2.5.4, scipy 1.18.1,
+  plotly 6.9.0, pysam 0.24.1, biopython 1.88
+
+  The pipeline is driven entirely from bash; the tools themselves are
+  written in C/C++ (Dorado, minimap2, samtools) or Python (pod5,
+  NanoPlot, blue-crab, Squigualiser). No custom code was written.
+
+Version check commands
+  dorado --version
+  pod5 --version
+  samtools --version | head -1
+  NanoPlot --version
+  minimap2 --version
+  blue-crab --version
+  squigualiser --version
+  python --version
+  nvidia-smi    # on a GPU node: driver, CUDA, GPU model
 
 
 Step 0. Environment setup (login node)
