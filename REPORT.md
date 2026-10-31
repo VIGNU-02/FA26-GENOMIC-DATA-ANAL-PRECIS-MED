@@ -1,9 +1,9 @@
 # Midterm Report | Oxford Nanopore Direct RNA Sequencing Analysis
 
 **Programmer:** Vignesh Gutta (vgutta@iu.edu)
-**Date:** 10/31/2026
-**System:** IU Big Red 200 (Slurm account c02374)
-**Dataset:** `rna004_hsapiens_r10k.pod5` from Zenodo record 15853348. 10,000 human direct RNA reads, RNA004 chemistry, Universal Human Reference RNA (UHR), poly-A selected.
+/**Date:** 10/31/2026
+/**System:** IU Big Red 200 (Slurm account c02374)
+/**Dataset:** `rna004_hsapiens_r10k.pod5` from Zenodo record 15853348. 10,000 human direct RNA reads, RNA004 chemistry, Universal Human Reference RNA (UHR), poly-A selected.
 
 ---
 
