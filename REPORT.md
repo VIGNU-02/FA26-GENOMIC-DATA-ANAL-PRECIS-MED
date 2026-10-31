@@ -3,25 +3,24 @@
 **Programmer:** Vignesh Gutta (vgutta@iu.edu)
 **Date:** 10/31/2026
 **System:** IU Big Red 200 (Slurm account c02374)
-**Dataset:** `rna004_hsapiens_r10k.pod5` from Zenodo record 15853348 — 10,000 human direct RNA reads, RNA004 chemistry, Universal Human Reference RNA (UHR), poly-A selected
+**Dataset:** `rna004_hsapiens_r10k.pod5` from Zenodo record 15853348. 10,000 human direct RNA reads, RNA004 chemistry, Universal Human Reference RNA (UHR), poly-A selected.
 
 ---
 
 ## 1. Basecalling
 
 ### Model and justification
-Model: `rna004_130bps_sup@v6.0.0` (auto-selected by Dorado when passing the `sup` alias)
+Model: `rna004_130bps_sup@v6.0.0`, auto-selected by Dorado when I passed the `sup` alias.
 
-I chose `sup` over `fast`/`hac` because:
-- The dataset is small (10,000 reads), so runtime was never going to be a constraint
-- Running on an NVIDIA A100-SXM4-40GB GPU, the sup model finishes in under a minute
-- Higher accuracy improves downstream alignment success and signal-to-base matching for Step 4
-- Current ONT guidance recommends sup for all production-quality analysis unless throughput is critical
+I chose `sup` over `fast` and `hac` because:
+- The dataset is only 10,000 reads, so runtime was not a constraint.
+- On an NVIDIA A100-SXM4-40GB the sup model finished in 35 seconds.
+- Higher basecalling accuracy gives more reads that align in Step 3 and cleaner signal-to-base assignment in Step 4.
+- ONT recommends sup for production analysis unless throughput is the priority.
 
 ### Parameters
-- `--emit-moves`: required to save the move table, needed by Squigualiser (Step 4)
-- `--device cuda:0`: use the GPU
-- Default beam search and chunking
+- `--emit-moves`: saves the move table, which Squigualiser needs in Step 4. Without it, Step 4 cannot run.
+- `--device cuda:0`: run on the GPU.
 
 ### Command
 ```bash
@@ -30,16 +29,16 @@ dorado basecaller sup rna004_hsapiens_r10k.pod5 \
 ```
 
 ### Results
-- 9,997 reads basecalled, 49 reads filtered by Dorado's internal QC
-- 53 reads split into chimeric sub-reads → final BAM contains 10,050 records
-- Total runtime: 35 seconds on one A100
-- Output: 18 MB BAM file
+- 9,997 reads basecalled, 49 filtered by Dorado's internal QC.
+- 53 reads were split into chimeric sub-reads, so the final BAM holds 10,050 records.
+- Runtime: 35 seconds on one A100.
+- Output: 18 MB BAM.
 
 ---
 
 ## 2. Quality Assessment
 
-NanoPlot 1.48.0 was run on the unaligned BAM. Key metrics:
+NanoPlot 1.48.0 run on the unaligned BAM:
 
 | Metric | Value |
 |---|---|
@@ -56,37 +55,38 @@ NanoPlot 1.48.0 was run on the unaligned BAM. Key metrics:
 | Reads >Q20 | 2,967 (29.5%) |
 
 ### Interpretation
-- **Quality is excellent.** Median Q18.7 corresponds to roughly 1 error per 75 bases; this is at the high end for direct RNA, reflecting the combined improvements of RNA004 chemistry and sup basecalling.
-- **Length distribution is biologically reasonable.** Median 828 bp with N50 1,526 bp matches expected direct-RNA full-length transcript capture. The longest reads (>20 kb) have low quality (Q1–Q2) and are likely chimeras or stall artifacts, not real molecules.
-- **High-quality reads sit at moderate length** (Q26-29 reads are 275–1,423 bp), which is the sweet spot for direct RNA.
-- **Yield (11.2 Mb)** is appropriate for a 10,000-read subset drawn from a larger run.
+Median quality is Q18.7, roughly one error per 75 bases, which sits at the high end for direct RNA and reflects the RNA004 chemistry combined with sup basecalling. 85% of reads pass Q15.
+
+The length distribution fits full-length direct-RNA capture: median 828 bp, N50 1,526 bp. The longest reads (over 20 kb) carry quality scores of Q1 to Q2, so they are chimeras or stall artifacts rather than real molecules. The highest-quality reads (Q26 to Q29) are 275 to 1,423 bp long, the range where direct RNA performs best.
+
+Total yield of 11.2 Mb is in line with a 10,000-read subset drawn from a larger run.
 
 ### Command
 ```bash
 NanoPlot --ubam basecall/basecalls.bam -o nanoplot --tsv_stats --raw
 ```
 
-Report: `NanoPlot-report.html` (included in this repo).
+I used `--ubam` rather than `--bam` because the BAM is unaligned at this stage. Report: `NanoPlot-report.html`.
 
 ---
 
 ## 3. Alignment
 
 ### Tool and justification
-Aligner: **minimap2 2.31** with the `-ax map-ont` preset.
+Aligner: **minimap2 2.31**, `-ax map-ont` preset.
 
-minimap2 is the standard long-read aligner for Oxford Nanopore data. It uses a seed-chain-align strategy (minimizers → chaining → base-level alignment) that handles noisy long reads efficiently. It is the aligner recommended by ONT in all official documentation and used in essentially every direct-RNA publication.
+minimap2 is the standard long-read aligner for Oxford Nanopore data. Its seed-chain-align strategy (minimizers, then chaining, then base-level alignment) handles noisy long reads efficiently, and ONT recommends it for direct RNA. I used it rather than a short-read aligner like BWA because short-read aligners assume low error rates and short fragments, neither of which holds for nanopore RNA.
 
 ### Reference
-**Ensembl Homo sapiens GRCh38 transcriptome, release 112.** I combined `cdna.all.fa` and `ncrna.fa` to form a complete transcriptome (277,062 transcripts). The coding-only cDNA file alone does not contain mitochondrial rRNAs such as MT-RNR2 (the target for Step 4), so including the noncoding file is essential.
+Ensembl *Homo sapiens* GRCh38 transcriptome, release 112. I combined `cdna.all.fa` (coding) and `ncrna.fa` (noncoding) into one file of 277,062 transcripts. The cDNA file alone does not contain mitochondrial rRNAs such as MT-RNR2, the Step 4 target, so the noncoding file is required.
 
 ### Parameters
-- `-ax map-ont`: Nanopore preset; outputs SAM
-- `-uf`: forward strand only (direct RNA is strand-specific; the molecule's 3′-end enters the pore first and the strand orientation is known)
-- `-k 14`: k-mer length recommended by ONT for direct RNA
-- `-y`: carry over all SAM tags from the input BAM into the aligned output — this preserves Dorado's move table (`mv:` tag), required for Step 4
-- `--MD`: emit MD tag for per-base mismatch information
-- `-t 8`: 8 CPU threads
+- `-ax map-ont`: Nanopore preset, SAM output.
+- `-uf`: forward strand only. Direct RNA is strand-specific because the molecule's 3′ end enters the pore first.
+- `-k 14`: k-mer length ONT recommends for direct RNA.
+- `-y`: carry input SAM tags into the output, which keeps Dorado's move table (`mv:`) for Step 4.
+- `--MD`: emit the MD tag for per-base mismatches.
+- `-t 8`: 8 threads.
 
 ### Command
 ```bash
@@ -98,18 +98,18 @@ minimap2 -ax map-ont -uf -k 14 -t 8 -y --MD \
 samtools index align/aligned.bam
 ```
 
-Note: I converted BAM → FASTQ first because minimap2 does not read BAM input natively (it expects FASTA/FASTQ). `samtools fastq -T "*"` carries the move table tags through the conversion.
+I converted BAM to FASTQ first because minimap2 reads FASTA/FASTQ, not BAM. `samtools fastq -T "*"` carries the move-table tags through the conversion.
 
 ### Results
 
 | Metric | Value |
 |---|---|
 | Primary reads | 10,050 |
-| **Primary mapped** | **9,562 (95.14%)** |
+| Primary mapped | 9,562 (95.14%) |
 | Secondary alignments | 24,254 |
 | Supplementary alignments | 533 |
 | Total alignment records | 34,837 |
-| Reads aligned to MT-RNR2 (ENST00000387347.2) | 183 |
+| Reads on MT-RNR2 (ENST00000387347.2) | 183 |
 
 ### Top 10 transcripts by read count
 
@@ -127,42 +127,41 @@ Note: I converted BAM → FASTQ first because minimap2 does not read BAM input n
 | 60 | MT-CYB | Cytochrome b |
 
 ### Interpretation
-- **95.14% primary alignment** is excellent for direct RNA. The high rate confirms that both sample quality and basecalling accuracy are good.
-- **~24,000 secondary alignments** reflect transcript isoforms: a read sharing an exon across multiple transcripts of the same gene gets reported once per matching isoform. Downstream isoform-level quantification would be needed to resolve these.
-- **Mitochondrial transcripts dominate the top hits** because mitochondria are present in hundreds-to-thousands of copies per cell and their long, polyadenylated transcripts (MT-RNR1/2 rRNAs, MT-CO/ND/ATP mRNAs, MT-tRNAs) survive the poly-A selection step. These top 10 account for only ~11% of all mapped reads; the remaining 89% are distributed across thousands of nuclear transcripts with low per-transcript coverage, as expected for an unamplified direct-RNA bulk sample.
-- **The 4.86% unmapped reads** likely include chimeras that Dorado didn't split, very low-quality reads, and transcripts not yet annotated in Ensembl.
+95.14% of primary reads mapped, which tells me the sample is clean human RNA and the basecalls are accurate enough to place.
+
+The ~24,000 secondary alignments come from transcript isoforms: a read covering an exon shared across several isoforms of one gene gets reported once per isoform. Resolving which isoform produced each read would need isoform-level quantification (for example NanoCount or Salmon).
+
+All of the top 10 transcripts are mitochondrial. A cell carries hundreds to thousands of mitochondria, and their long transcripts (the MT-RNR rRNAs, the MT-CO/ND/ATP mRNAs, the MT-tRNAs) are polyadenylated, so they survive the poly-A selection. These 10 transcripts hold about 11% of mapped reads; the other 89% spread across thousands of nuclear transcripts at low per-transcript coverage, which is what an unamplified bulk direct-RNA sample looks like.
+
+The 4.86% that did not map are likely chimeras Dorado did not split, very low-quality reads, and transcripts not yet in Ensembl.
 
 ---
 
 ## 4. Raw Signal Visualization
 
 ### Tool
-**Squigualiser 0.7.0**, using Option 2 (basecaller move table) from the documentation.
+Squigualiser 0.7.0, Option 2 (basecaller move table).
 
 ### Approach
-Dorado's move table (saved via `--emit-moves` in Step 1) records which stretch of signal produced which base. Squigualiser uses this table in three sub-steps:
+Dorado's move table records which stretch of signal produced which base. Squigualiser uses it in three steps:
 
-1. **reform**: translate Dorado's move table into a PAF file linking signal samples to each read's bases
-2. **realign**: combine reform PAF with the minimap2 BAM to produce signal↔reference position mappings
-3. **plot**: draw interactive HTML plots of the raw current (y-axis, picoamps) over signal samples (x-axis), with reference bases labeled on top
+1. **reform**: convert the move table into a PAF that links signal samples to each read's bases.
+2. **realign**: combine that PAF with the minimap2 BAM to map signal samples to reference positions.
+3. **plot**: draw raw current (y-axis, picoamps) against signal sample index (x-axis), with reference bases labeled along the top.
 
-The POD5 was converted to BLOW5 using `blue-crab` because Squigualiser's slow5 library requires BLOW5/SLOW5 input, not POD5.
+I converted the POD5 to BLOW5 with `blue-crab` first, because Squigualiser's slow5 library reads BLOW5/SLOW5, not POD5.
 
 ### Commands
 ```bash
-# POD5 → BLOW5
 blue-crab p2s rna004_hsapiens_r10k.pod5 -o rna004_hsapiens_r10k.blow5
 
-# reform
 squigualiser reform --sig_move_offset 0 --kmer_length 5 \
   -b basecall/basecalls.bam -c -o squig/reform.paf
 
-# realign
 squigualiser realign --bam align/aligned.bam \
   --paf squig/reform.paf -o squig/realign.bam
 samtools index squig/realign.bam
 
-# plot: ENST00000387347.2 positions 1360-1400
 squigualiser plot \
   --file reference/Homo_sapiens.GRCh38.transcriptome.fa \
   --slow5 rna004_hsapiens_r10k.blow5 \
@@ -173,42 +172,36 @@ squigualiser plot \
   --plot_limit 10 --rna
 ```
 
-### Parameters explained
-- `--sig_move_offset 0`, `--kmer_length 5`: standard RNA004 settings (the pore holds 5 bases at a time, no offset between move entries and signal samples). Squigualiser auto-detected a stride of 6 (6 signal samples per move entry).
-- `--rna`: tells Squigualiser the data is RNA (direction, base alphabet)
-- `--plot_limit 10`: produce up to 10 plots (one per read covering the region)
+### Parameters
+- `--sig_move_offset 0`, `--kmer_length 5`: the RNA004 pore holds 5 bases at a time with no offset between move entries and signal. Squigualiser detected a stride of 6 signal samples per move entry.
+- `--rna`: RNA data, read 3′ to 5′.
+- `--plot_limit 10`: up to 10 plots, one per read covering the region.
 
 ### Results
-Of the 183 reads mapped to MT-RNR2, 10 reads cover the full 1360-1400 window and were plotted. Each plot is an interactive Bokeh HTML (`midterm_plots/*.html`).
+183 reads mapped to MT-RNR2. Of those, 10 cover the full 1360-1400 window and were plotted as interactive Bokeh HTML files (`midterm_plots/*.html`).
 
 ### What the plot shows
-- **X-axis:** signal sample index (chronological order of pore measurements)
-- **Y-axis:** raw ionic current in picoamps (pA)
-- **Top strip:** the reference sequence of MT-RNR2 from position 1360 to 1400, with each base labeled
-- **Signal under each base:** the current trace recorded while that base (and its surrounding 5-mer context) was inside the pore
-- Different bases produce distinct current levels because the physical constriction of the pore blocks ionic flow by amounts that depend on the specific 5-mer sitting inside it
-- The strand is read 3′ → 5′ because direct-RNA sequencing starts at the poly-A tail
+The x-axis is the signal sample index, in the order the pore recorded measurements. The y-axis is raw ionic current in picoamps. The top strip shows the MT-RNR2 reference from position 1360 to 1400, one label per base. Under each base sits the current recorded while that base and its surrounding 5-mer were inside the pore.
+
+Different bases give different current levels because the narrow part of the pore blocks ionic flow by an amount set by the specific 5-mer sitting in it. The strand reads 3′ to 5′ because direct-RNA sequencing starts at the poly-A tail.
 
 ### Interpretation
-Comparing multiple reads in the same region shows that signal patterns are consistent across molecules — the current levels under each labeled base match in shape and amplitude across different reads. This confirms:
-1. Dorado's basecalls are a faithful interpretation of the raw signal
-2. The pore produces reproducible current signatures for the same k-mer context across different molecules
-3. Any position where all reads show an unexpected signal shape would be a candidate for an RNA modification (such as m6A), since modifications shift the current measurably
+Across the 10 reads, the current level and shape under each labeled base line up. The pore produces a repeatable signature for the same base context across different molecules, and Dorado's basecalls track that signal. A position where every read showed an unexpected current shape would point to an RNA modification such as m6A, since modifications shift the current.
 
 ---
 
 ## 5. Precision Medicine Application
 
-**Isoform-resolved transcriptomics in cancer therapy selection.**
+**Isoform-resolved transcriptomics for cancer therapy selection.**
 
-Short-read RNA-seq (Illumina) produces 100-150 bp fragments that cover only part of a transcript. When a gene has multiple splice isoforms sharing many exons, short reads cannot determine which full-length isoform each fragment came from — isoform quantification relies on statistical inference and often collapses to the gene level.
+Short-read RNA-seq produces 100 to 150 bp fragments that cover only part of a transcript. When a gene has several splice isoforms that share exons, a short read cannot say which full-length isoform it came from, so isoform-level counts rely on statistical inference and often collapse to the gene. A long direct-RNA read covers the whole mRNA in one pass and names its isoform directly.
 
-Long-read direct RNA sequencing reads **entire mRNA molecules in one pass**, so each read definitively identifies its isoform. Three applications in precision medicine:
+Three cases where that matters:
 
-1. **Fusion transcripts in cancer.** Oncogenic fusions (e.g., BCR-ABL1 in CML, EML4-ALK in lung cancer) create novel chimeric transcripts. A short read spanning the fusion junction is often rare and ambiguous; a long read spans the whole fusion transcript and reveals the exact breakpoint and reading frame, which determines whether a targeted therapy (imatinib, crizotinib, etc.) is likely to work.
+1. **Fusion transcripts in cancer.** Oncogenic fusions such as BCR-ABL1 in CML or EML4-ALK in lung cancer create chimeric transcripts. A short read across the fusion junction is rare and often ambiguous; a long read spans the whole fusion and gives the exact breakpoint and reading frame, which decides whether a targeted drug like imatinib or crizotinib is likely to work.
 
-2. **Clinically relevant isoform switching.** Different cancer subtypes express different isoforms of the same gene. For example, splice variants of the androgen receptor (AR-V7) in prostate cancer predict resistance to abiraterone and enzalutamide. Long reads unambiguously quantify AR-V7 vs full-length AR; short reads require specialized assays that miss novel variants.
+2. **Isoform switching.** Splice variants of the androgen receptor (AR-V7) in prostate cancer predict resistance to abiraterone and enzalutamide. Long reads quantify AR-V7 against full-length AR without a variant-specific assay, so a novel variant is not missed.
 
-3. **RNA modifications as biomarkers.** Direct RNA sequencing uniquely preserves chemical modifications (m6A, pseudouridine, inosine) in the raw signal, because the native RNA molecule itself passes through the pore. m6A hypomethylation of specific transcripts has been linked to acute myeloid leukemia aggressiveness; detecting it directly from patient RNA samples could guide stratification. Short-read RNA-seq converts RNA to cDNA, erasing all modifications.
+3. **RNA modifications as biomarkers.** Direct RNA sequencing keeps chemical modifications (m6A, pseudouridine, inosine) in the signal, because the native molecule passes through the pore. m6A changes on specific transcripts have been linked to AML aggressiveness and could help stratify patients. Short-read RNA-seq converts RNA to cDNA and erases these marks.
 
-In all three cases, the extra information from long, direct-RNA reads provides therapeutically actionable detail that short reads cannot capture.
+In each case the long read carries information a short read cannot: the full isoform, the exact breakpoint, or the native modification.
