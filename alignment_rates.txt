@@ -1,0 +1,12 @@
+SRR22269872	54.35% overall alignment rate
+SRR22269873	61.06% overall alignment rate
+SRR22269874	67.51% overall alignment rate
+SRR22269875	65.15% overall alignment rate
+SRR22269876	67.65% overall alignment rate
+SRR22269877	72.88% overall alignment rate
+SRR22269878	62.12% overall alignment rate
+SRR22269879	52.93% overall alignment rate
+SRR22269880	54.24% overall alignment rate
+SRR22269881	60.47% overall alignment rate
+SRR22269882	44.67% overall alignment rate
+SRR22269883	23.72% overall alignment rate

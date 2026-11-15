@@ -1,0 +1,15 @@
+Status	/N/scratch/vgutta/asg2/aligned/SRR22269872.bam	/N/scratch/vgutta/asg2/aligned/SRR22269873.bam	/N/scratch/vgutta/asg2/aligned/SRR22269874.bam	/N/scratch/vgutta/asg2/aligned/SRR22269875.bam	/N/scratch/vgutta/asg2/aligned/SRR22269876.bam	/N/scratch/vgutta/asg2/aligned/SRR22269877.bam	/N/scratch/vgutta/asg2/aligned/SRR22269878.bam	/N/scratch/vgutta/asg2/aligned/SRR22269879.bam	/N/scratch/vgutta/asg2/aligned/SRR22269880.bam	/N/scratch/vgutta/asg2/aligned/SRR22269881.bam	/N/scratch/vgutta/asg2/aligned/SRR22269882.bam	/N/scratch/vgutta/asg2/aligned/SRR22269883.bam
+Assigned	1816318	857839	3498833	2491731	4330206	1128751	1420882	2627256	1819616	1073653	825468	368752
+Unassigned_Unmapped	3577828	1576355	2389298	2186996	2343761	1633551	1628922	3090416	2438569	2895408	3068276	3828353
+Unassigned_Read_Type	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Singleton	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_MappingQuality	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Chimera	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_FragmentLength	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Duplicate	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_MultiMapping	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Secondary	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_NonSplit	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_NoFeatures	17128582	11162641	13479028	12211542	8772651	17119590	8298448	9048024	8934978	17653822	9251081	4671452
+Unassigned_Overlapping_Length	0	0	0	0	0	0	0	0	0	0	0	0
+Unassigned_Ambiguity	0	0	0	0	0	0	0	0	0	0	0	0
