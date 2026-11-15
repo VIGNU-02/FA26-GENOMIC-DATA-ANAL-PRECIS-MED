@@ -343,55 +343,68 @@ Outputs:
 12. FILES IN THIS REPOSITORY
 ====================================================================
 
-Scripts
-  trim_array.sh                        adapter and quality trimming (Slurm array)
-  build_index.sh                       HISAT2 index build
-  align_array.sh                       alignment to GRCh38 (Slurm array)
-  count.sh                             featureCounts against miRBase
-  count_ensembl.sh                     featureCounts against Ensembl GTF (comparison)
-  deseq2_analysis.R                    DESeq2, both comparisons, PCA
-  volcano_plots.R                      volcano plots
-  go_final.R                           GO enrichment with corrected background
+Folders follow the pipeline in order. Each one holds the script for that
+step and the output that step produced.
 
-Data and results
-  metadata.csv                         sample sheet
-  mirna_counts_clean.tsv               raw count matrix, 2,783 x 12
-  mirna_counts.txt.summary             featureCounts assignment summary
-  miRNA_normalized_expression.csv      DESeq2 normalized counts
-  alignment_rates.txt                  per-sample overall alignment rate
-  DEG_Mock_vs_SARS_full.csv
-  DEG_Mock_vs_SARS_significant.csv
-  DEG_SARS_24h_vs_72h_full.csv
-  DEG_SARS_24h_vs_72h_significant.csv
-  GOfinal_Mock_vs_SARS_UP.csv
-  GOfinal_Mock_vs_SARS_DOWN.csv
-  GOfinal_SARS_24h_vs_72h_UP.csv
-  GOfinal_SARS_24h_vs_72h_DOWN.csv
+  README.txt                              this file
+  README.md                               overview
+  REPORT.md                               results and interpretation
 
-Figures
-  PCA_plot.pdf
-  volcano_Mock_vs_SARS.png
-  volcano_SARS_24h_vs_72h.png
+  01_trimming/
+    trim_array.sh                         adapter and quality trimming (Slurm array)
 
-Write-up
-  REPORT.md                            results and interpretation
-  README.md                            overview
-  README.txt                           this file
+  02_alignment/
+    build_index.sh                        HISAT2 index build
+    align_array.sh                        alignment to GRCh38 (Slurm array)
+    alignment_rates.txt                   per-sample overall alignment rate
+
+  03_counting/
+    count.sh                              featureCounts against miRBase
+    count_ensembl.sh                      featureCounts against Ensembl GTF (comparison)
+    metadata.csv                          sample sheet
+    mirna_counts_clean.tsv                raw count matrix, 2,783 x 12
+    mirna_counts.txt.summary              featureCounts assignment summary
+
+  04_differential_expression/
+    deseq2_analysis.R                     DESeq2, both comparisons, PCA
+    volcano_plots.R                       volcano plots
+    DEG_Mock_vs_SARS_full.csv
+    DEG_Mock_vs_SARS_significant.csv
+    DEG_SARS_24h_vs_72h_full.csv
+    DEG_SARS_24h_vs_72h_significant.csv
+    miRNA_normalized_expression.csv       DESeq2 normalized counts
+    PCA_plot.pdf
+    volcano_Mock_vs_SARS.png
+    volcano_SARS_24h_vs_72h.png
+
+  05_go_enrichment/
+    go_final.R                            GO enrichment with corrected background
+    GOfinal_Mock_vs_SARS_UP.csv
+    GOfinal_Mock_vs_SARS_DOWN.csv
+    GOfinal_SARS_24h_vs_72h_UP.csv
+    GOfinal_SARS_24h_vs_72h_DOWN.csv
+
+Not in the repository, because of size: the SRA downloads, FastQC output,
+trimmed FASTQ files, BAM files and the GRCh38 index. The commands above
+regenerate all of them.
 
 ====================================================================
 13. RUN ORDER
 ====================================================================
 
-  1.  download SRA runs                   (section 3)
-  2.  fastqc                              (section 4)
-  3.  sbatch trim_array.sh                (section 5)
-  4.  sbatch build_index.sh               (section 6, can run alongside step 3)
-  5.  sbatch align_array.sh               (section 7)
-  6.  sbatch count.sh                     (section 8)
-  7.  clean the count table               (section 8)
-  8.  Rscript deseq2_analysis.R           (section 10)
-  9.  Rscript volcano_plots.R             (section 10)
-  10. Rscript go_final.R                  (section 11)
+  1.  download SRA runs                              (section 3)
+  2.  fastqc                                         (section 4)
+  3.  sbatch 01_trimming/trim_array.sh               (section 5)
+  4.  sbatch 02_alignment/build_index.sh             (section 6)
+  5.  sbatch 02_alignment/align_array.sh             (section 7)
+  6.  sbatch 03_counting/count.sh                    (section 8)
+  7.  clean the count table                          (section 8)
+  8.  Rscript 04_differential_expression/deseq2_analysis.R   (section 10)
+  9.  Rscript 04_differential_expression/volcano_plots.R     (section 10)
+  10. Rscript 05_go_enrichment/go_final.R            (section 11)
 
 Steps 3 and 4 are independent, so the index build was submitted while
 trimming was still running.
+
+The scripts use absolute paths under /N/scratch/vgutta/asg2, so they run
+from any working directory. Change that prefix to run them elsewhere.

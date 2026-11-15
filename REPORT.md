@@ -91,7 +91,7 @@ Most significant:
 | hsa-miR-574-3p | +0.704 | 516 | 5.47e-03 |
 | hsa-miR-98-5p | -0.841 | 1,398 | 5.47e-03 |
 
-Full list: `DEG_Mock_vs_SARS_significant.csv`. Volcano plot: `volcano_Mock_vs_SARS.png`.
+Full list: `04_differential_expression/DEG_Mock_vs_SARS_significant.csv`. Volcano plot: `04_differential_expression/volcano_Mock_vs_SARS.png`.
 
 Related miRNAs move together:
 
@@ -126,7 +126,7 @@ Most significant:
 | hsa-miR-99b-5p | +1.102 | 16,650 | 1.60e-03 |
 | hsa-miR-199a-3p | -1.150 | 3,405 | 1.93e-03 |
 
-Full list: `DEG_SARS_24h_vs_72h_significant.csv`. Volcano plot: `volcano_SARS_24h_vs_72h.png`.
+Full list: `04_differential_expression/DEG_SARS_24h_vs_72h_significant.csv`. Volcano plot: `04_differential_expression/volcano_SARS_24h_vs_72h.png`.
 
 Family coherence shows up again: miR-148a-3p and miR-148b-3p both fall, as do miR-199a-3p and miR-199b-3p, the pair that also changed in comparison 1.
 
@@ -191,7 +191,7 @@ Three of the thirteen terms are autophagy-related, and nutrient-sensing terms, c
 
 Apoptosis regulation leads the 24 h vs 72 h up-regulated set, which fits a cell-fate decision shifting as infection runs on. These three sets each keep several hundred terms, so individual terms are indicative rather than conclusive. Top-ranked terms are given here and the full tables are in the repository.
 
-All four GO result tables: `GOfinal_*.csv`.
+All four GO result tables: `05_go_enrichment/GOfinal_*.csv`.
 
 ---
 
@@ -201,7 +201,7 @@ All four GO result tables: `GOfinal_*.csv`.
 
 **Depth is partly confounded with time point.** Mean library size was about 1.42 M at 24 h and 2.46 M at 72 h, a 1.7-fold difference, and that difference falls across the groups compared in comparison 2. Depth was not meaningfully confounded with infection status (Mock about 1.77 M, SARS about 2.11 M).
 
-**PCA separates the groups only partly.** PC1 and PC2 explain 29% and 19% of variance, leaving over half unexplained. Mock 72 h and SARS 24 h separate cleanly on PC2, but the other groups overlap and within-group replicate spread is wide. SRR22269883, the 23.7%-alignment sample, sits away from its two Mock 24 h replicates. See `PCA_plot.pdf`.
+**PCA separates the groups only partly.** PC1 and PC2 explain 29% and 19% of variance, leaving over half unexplained. Mock 72 h and SARS 24 h separate cleanly on PC2, but the other groups overlap and within-group replicate spread is wide. SRR22269883, the 23.7%-alignment sample, sits away from its two Mock 24 h replicates. See `04_differential_expression/PCA_plot.pdf`.
 
 **Effect sizes are modest.** Of the 28 significant miRNAs in comparison 1, only 4 exceed 2-fold change.
 
